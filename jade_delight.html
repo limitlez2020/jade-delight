@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Jade Delight</title>
+
+	<!-- Use jQeury: -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- Use CSS for some sweet styling: -->
+	<link rel="stylesheet" type="text/css" href="jade_delight.css">
+
+</head>
+
+<body>
+	<script>
+
+		function MenuItem(name, cost)
+		{
+			this.name = name;
+			this.cost=cost;
+		}
+
+		menuItems = new Array(
+			new MenuItem("Chicken Chop Suey", 5.5),
+			new MenuItem("Sweet and Sour Pork", 7.25),
+			new MenuItem("Shrimp Lo Mein", 6.80),
+			new MenuItem("Moo Shi Chicken", 9.50),
+			new MenuItem("Fried Rice", 3.25)
+		);
+
+		function makeSelect(name, minRange, maxRange)
+		{
+			var t= "";
+			t = "<select name='" + name + "' size='1'>";
+			for (j=minRange; j<=maxRange; j++)
+			t += "<option>" + j + "</option>";
+			t+= "</select>"; 
+			return t;
+		}
+
+		function td(content, className="")
+		{
+			return "<td class = '" + className + "'>" + content + "</td>";
+		}
+		
+
+
+
+		/**************   ADDED THESE   **************/
+		function updateOrderTotals()
+		{
+			/* Loop through all the rows in the table
+			 * and calculate the total cost in each row
+			 * Then update the boxes to contain the right total cost */
+			var totalCost = 0;
+			var numItems = 0;
+			var table = document.getElementsByTagName("table")[0];
+			var rows = table.rows;
+			for (var i = 1; i < rows.length; i++) 
+			{
+				var row = rows[i];
+				var quantity = parseInt(row.getElementsByTagName("select")[0].value);
+				var cost = parseFloat(row.getElementsByClassName("cost")[0].innerText.substring(1));
+				var itemTotalCost = quantity * cost;
+				row.getElementsByClassName("totalCost")[0].getElementsByTagName("input")[0].value = itemTotalCost.toFixed(2);
+				
+				/* Make the itemTotalCost field non-editable: */
+				row.getElementsByClassName("totalCost")[0].getElementsByTagName("input")[0].setAttribute("readonly", true);
+				totalCost += itemTotalCost;
+				numItems += quantity;
+			}
+		
+			/* Update subtotal */
+			var subtotal = totalCost.toFixed(2);
+			document.getElementById("subtotal").value = subtotal;
+
+			/* Update tax */
+			var tax = (subtotal * 0.0625).toFixed(2);
+			document.getElementById("tax").value = tax;
+
+			/* Update total */
+			var total = (parseFloat(subtotal) + parseFloat(tax)).toFixed(2);
+			document.getElementById("total").value = total;
+
+
+			/* Set the total fields to readonly, so they
+		 	 * won't be edited manually after */
+			document.getElementById("subtotal").readOnly = true;
+			document.getElementById("tax").readOnly = true;
+			document.getElementById("total").readOnly = true;
+		}
+
+
+
+
+
+
+		/* This section of code is to either show or hide the
+		 * address depending on whether pickup or delivery is chosen
+		 */
+		$(document).ready(function() 
+		{
+			$("input[name='p_or_d']").on("change", function()
+			{
+				if ($(this).val() === "delivery")
+				{
+					$(".userInfo.address").show();
+				}
+				else 
+				{
+					$(".userInfo.address").hide();
+				}
+			});
+		});
+
+
+
+
+
+
+
+
+
+		/********  VALIDATIONS   *******/
+		/* This section of code is to validate the user's input */
+		function handleValidations()
+		{
+			/* Keep track of if there was any validations
+			 * issues throught validation process */
+			var validationIssues = false;
+
+
+
+
+			/*******  Address Validation  ******/
+			/* Get the delivery radio button, street and city elements: */
+			var deliveryRadio = document.querySelector('input[name="p_or_d"][value="delivery"]');
+			var streetField = document.querySelector('input[name="street"]');
+			var cityField = document.querySelector('input[name="city"]');
+
+			/* Check if delivery is selected and street and city are not empty */
+			if (deliveryRadio.checked && (streetField.value.trim() === '' || cityField.value.trim() === ''))
+			{
+				/* Prevent the form from submitting
+				 * and show an error message to user: */
+				event.preventDefault();
+				alert("Please fill in the street and city fields for delivery.");
+				validationIssues = true;
+			}
+			/*****************************************************/
+
+
+
+
+
+
+
+			/*******  Fullname Verfication  ******/
+			/* Get the lastname element: */
+			var lastnameField = document.querySelector('input[name="lname"]');
+			/* Check if lastname is empty: */
+			if (lastnameField.value.trim() === '')
+			{
+				/* Prevent the form from submitting
+				* and show an error message to user: */
+				event.preventDefault();
+				alert("Please fill in your last name.");
+				validationIssues = true;
+			}
+			/*****************************************************/
+
+
+
+
+
+
+			/*******  Number Verfication  ******/
+			/* Get the phone number element: */
+			var phoneField = document.querySelector('input[name="phone"]');
+			/* Check if phone number is empty: */
+			if (phoneField.value.trim() === '')
+			{
+				/* Prevent the form from submitting
+				* and show an error message to user: */
+				event.preventDefault();
+				alert("Please put in your phone number.");
+				validationIssues = true;
+			}
+			/* If phone number is provided, make sure it is valid */
+			else
+			{
+				/* Check if the phone number is valid:
+				 * Loop through each char in the string 
+				 * phoneField and count the number of numbers seen */
+				var phoneNumber = phoneField.value.trim();
+				var amountOfNumbers = 0;
+				for (var i = 0; i < phoneNumber.length; i++)
+				{
+					/* Count amount of numbers excluding
+					 * spaces and other characters: */
+					if (!isNaN(phoneNumber.charAt(i)) && phoneNumber.charAt(i) !== ' ')
+					{
+						amountOfNumbers++;
+					}
+				}
+
+				if (amountOfNumbers != 7 && amountOfNumbers != 10)
+				{
+					/* Prevent the form from submitting
+					* and show an error message to user: */
+					event.preventDefault();
+					alert("Please put in a valid phone number.");
+					validationIssues = true;
+				}
+			}
+			/*****************************************************/
+
+
+
+
+
+
+
+			/*******  Item Number Verfication  ******/
+			/* Verify that at least one item has been ordered: */
+			/* Do this by checking each item's quantity
+			 * if all of them's quantity is 0,
+			 * then there was no order */
+			var orderedItem = false;
+			var table = document.getElementsByTagName("table")[0];
+			var rows = table.rows;
+			for (var i = 1; i < rows.length; i++) 
+			{
+				var row = rows[i];
+				var quantity = parseInt(row.getElementsByTagName("select")[0].value);
+				if (quantity > 0)
+				{
+					orderedItem = true;
+				}
+			}
+
+			if (!orderedItem)
+			{
+				event.preventDefault();
+				alert("Please order at least one item.");
+				validationIssues = true;
+			}
+			/*****************************************************/
+
+
+
+
+
+
+
+			/***********    No validation Issues:   **************/
+			if (!validationIssues)
+			{
+				// If there are no validation issues, show a thank you message and open a new window with the order details
+				alert("Thank you for your order!");
+
+				// Create the order details string to be displayed in the new window
+				var orderDetails = "<html><head><title>Order Details</title></head><main>";
+				orderDetails += "<h1>Order:\n</h1>";
+
+				// Loop through all the rows in the table to get the item name, quantity, cost and total cost for each item ordered
+				var table = document.getElementsByTagName("table")[0];
+				var rows = table.rows;
+				for (var i = 1; i < rows.length; i++)
+				{
+					var row = rows[i];
+					var item = row.getElementsByClassName("itemName")[0].innerText;
+					var quantity = row.getElementsByTagName("select")[0].value;
+					var cost = row.getElementsByClassName("cost")[0].innerText;
+					var totalCost = row.getElementsByClassName("totalCost")[0].getElementsByTagName("input")[0].value;
+
+					// We only want to print the ones that are bought:
+					if (quantity > 0)
+					{
+						orderDetails += "<b>" + item + "</b>\n";
+						orderDetails += "\t";
+						orderDetails += "Quantity:   " + quantity + "\n";
+						orderDetails += "\t";
+						orderDetails += "Cost:   " + cost + "\n";
+						orderDetails += "\t";
+						orderDetails += "Total:   $" + totalCost + "\n";
+					}
+
+				
+				}
+
+				// Add the subtotal, tax and total to the order details
+				var subtotal = document.getElementById("subtotal").value;
+				var tax = document.getElementById("tax").value;
+				var total = document.getElementById("total").value;
+				orderDetails += "\n\n<b>Subtotal:</b>   $" + subtotal + "\n<b>Tax:</b>   $" + tax + "\n<b>Total:</b>   $" + total;
+
+
+
+				/*******  TIME STUFFZ:   *********/
+				const currTime = new Date();
+				var currPlusFifiteen = new Date(currTime.getTime() + (15 * 60000));
+				var currPlusFourtyFive = new Date(currTime.getTime() + (45 * 60000));
+
+				/* Pickup Time: */
+				var hours = currPlusFifiteen.getHours();
+				var minutes = currPlusFifiteen.getMinutes();
+				var ampm = hours >= 12 ? 'pm' : 'am';
+				hours = hours % 12;
+				hours = hours ? hours : 12;   // the hour '0' should be '12' in AM/PM
+				minutes = minutes < 10 ? '0'+ minutes : minutes;
+				var pickupTime = hours + ':' + minutes + ' ' + ampm;
+
+				/* Delivery Time: */
+				var hours = currPlusFourtyFive.getHours();
+				var minutes = currPlusFourtyFive.getMinutes();
+				var ampm = hours >= 12 ? 'pm' : 'am';
+				hours = hours % 12;
+				hours = hours ? hours : 12;   // the hour '0' should be '12' in AM/PM
+				minutes = minutes < 10 ? '0'+ minutes : minutes;
+				var deliveryTime = hours + ':' + minutes + ' ' + ampm;
+
+				/*****************************************************/
+
+
+
+				var pickupOrDelivery = document.querySelector('input[name="p_or_d"]:checked').value;
+				if (pickupOrDelivery === "pickup")
+				{
+					orderDetails += "\n\n\nPlease pick up your order at our restaurant in 15 minutes. \n";
+					orderDetails += "<b>Pickup time:  </b>" + pickupTime;
+				} 
+				else
+				{
+					orderDetails += "\n\n\nYour order will be delivered to the following address in 45 minutes:\n";
+					orderDetails += document.querySelector('input[name="street"]').value + "\n" + document.querySelector('input[name="city"]').value + "\n";
+					orderDetails += "<b>Delivery time:  </b>" + deliveryTime;
+				}
+
+				orderDetails += "</main>";
+
+				// Add style:
+				orderDetails += "<style>";
+					orderDetails += "@import url('https://fonts.googleapis.com/css2?family=Poppins&display=swap');";
+
+					orderDetails += "main { font-family: 'Poppins'; background-color: #f7e5d5; }";
+					orderDetails += "main { justify-content: center; border-color: black;}";
+					orderDetails += "main { border: solid; margin: 50px; width: 550px}";
+					orderDetails += "main { align-items: center; align-contents: center; }";
+					orderDetails += "main { padding-bottom: 50px; padding-left: 50px; }";
+					orderDetails += "main { padding-top: 20px; padding-right: 50px; }";
+					        
+					
+				orderDetails += "</style>";
+
+				/* Finish file */
+				orderDetails += "</html>";
+
+				// Open a new window with the order details
+				var orderWindow = window.open("", "Order Details");
+				orderWindow.document.write("<pre>" + orderDetails + "</pre>");
+				orderWindow.document.close();
+			}
+
+		}
+
+		/**************   ADDED THESE   **************/
+
+	</script>
+
+
+	<h1>
+		Jade Delight
+	</h1>
+
+
+	<form>
+
+		<p class="userInfo"><label>First Name:</label> <input type="text"  name='fname' /></p>
+		<p class="userInfo"><label>Last Name*:</label>  <input type="text"  name='lname' /></p>
+		<p class="userInfo address"><label>Street*:</label> <input type="text" name='street' /></p>
+		<p class="userInfo address"><label>City*:</label> <input type="text" name='city' /></p>
+		<p class="userInfo"><label>Phone*:</label> <input type="text"  name='phone' /></p>
+		<p> 
+			
+			<input type="radio"  name="p_or_d" value = "pickup" checked="checked"/>Pickup
+			<input type="radio"  name="p_or_d" value = "delivery"/>Delivery
+			
+		</p>
+
+
+		<table border="0" cellpadding="3">
+			<tr>
+				<th>Select Item</th>
+				<th>Item Name</th>
+				<th>Cost Each</th>
+				<th>Total Cost</th>
+			</tr>
+
+
+			<script>
+				var s = "";
+				for (i=0; i< menuItems.length; i++)
+				{
+					s += "<tr>";
+					s += td(makeSelect("quan" + i, 0, 10),"selectQuantity");
+					s += td(menuItems[i].name, "itemName");
+					s += td("$" +menuItems[i].cost.toFixed(2), "cost");
+					s += td("$<input type='text' name='cost'/>", "totalCost");
+					s+= "</tr>";
+				}
+				document.writeln(s);
+			</script>
+
+		</table>
+
+
+
+
+
+		<!-- ADDED THESE -->
+		<script>
+			/* This is for the selector, when we click the a quantity */
+			var selects = document.getElementsByTagName("select");
+			for (var i = 0; i < selects.length; i++)
+			{
+				selects[i].addEventListener("change", updateOrderTotals);
+			}
+
+		</script>
+		<!-- ADDED THESE -->
+
+
+
+
+		
+		<p class="subtotal totalSection"><label>Subtotal:</label> 
+		$ <input type="text"  name='subtotal' id="subtotal" />
+		</p>
+		<p class="tax totalSection"><label>Mass tax 6.25%:</label>
+		$ <input type="text"  name='tax' id="tax" />
+		</p>
+		<p class="total totalSection"><label>Total:</label> $ <input type="text"  name='total' id="total" />
+		</p>
+
+		<input type = "button" value = "Submit Order" />
+
+
+
+
+
+		<!-- ADDED THESE -->
+		<script>
+			// Get the submit button element
+			var submitButton = document.querySelector('input[type="button"]');
+
+			// Add an event listener to handle form submission
+			submitButton.addEventListener('click', handleValidations);
+
+		</script>
+		<!-- ADDED THESE -->
+
+
+
+	</form>
+</body>
+</html>
